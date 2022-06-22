@@ -1,85 +1,122 @@
-import React from "react";
-import {
-  Text,
-  Link,
-  HStack,
-  Center,
-  Heading,
-  Switch,
-  useColorMode,
-  NativeBaseProvider,
-  extendTheme,
-  VStack,
-  Box,
-} from "native-base";
-import NativeBaseIcon from "./components/NativeBaseIcon";
-import { Platform } from "react-native";
+import React, { useState }  from "react";
+import { Button, Modal, FormControl, Input, Center, NativeBaseProvider,Radio } from "native-base";
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import logo from './assets/logo.png'; 
+import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing'; 
 
-// Define the config
-const config = {
-  useSystemColorMode: false,
-  initialColorMode: "dark",
+const ShareButton = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [showModal2, setShowModal2] = useState(false);
+  const [selectedImage, setSelectedImage] = React.useState(null);
+
+  let openImagePickerAsync = async () => {
+    let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {alert("Permission to access camera roll is required!");return;}
+    let pickerResult = await ImagePicker.launchImageLibraryAsync();
+    if (pickerResult.cancelled === true) {return;}
+    setSelectedImage({ localUri: pickerResult.uri });
+    setShowModal2(true)};
+
+  let openShareDialogAsync = async () => {
+    if (Platform.OS === 'web') {alert(`Uh oh, sharing isn't available on your platform`);return;}
+    await Sharing.shareAsync(selectedImage.localUri);}; 
+
+  if (selectedImage !== null) {
+    return <Center>
+    <Modal isOpen={showModal2} onClose={() => setShowModal2(false)} size="lg">
+    <Modal.Content maxWidth="350">
+      <Modal.CloseButton />
+      <Modal.Header>Selected Image</Modal.Header>
+      <Modal.Body>
+      <View style={styles.container}>
+        <Image source={{ uri: selectedImage.localUri }} style={styles.thumbnail}/>
+        <Text>{"\n"}</Text>
+        <Button onPress={openShareDialogAsync} style={styles.button2}>
+          <Text style={styles.buttonText}>Share this photo</Text>
+        </Button>
+        </View>
+      </Modal.Body>
+    </Modal.Content>
+  </Modal>
+  </Center>
+  }
+
+  return <Center>
+      <Button onPress={() => setShowModal(true)}>Share</Button>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="lg">
+        <Modal.Content maxWidth="350">
+          <Modal.CloseButton />
+          <Modal.Header>Select Image</Modal.Header>
+          <Modal.Body>
+              <TouchableOpacity onPress={openImagePickerAsync} style={styles.button1}>
+                  <Text style={styles.buttonText}>Pick a photo</Text>
+              </TouchableOpacity>
+          </Modal.Body>
+        </Modal.Content>
+      </Modal>
+    </Center>;
 };
 
-// extend the theme
-export const theme = extendTheme({ config });
-
 export default function App() {
+
   return (
-    <NativeBaseProvider>
-      <Center
-        _dark={{ bg: "blueGray.900" }}
-        _light={{ bg: "blueGray.50" }}
-        px={4}
-        flex={1}
-      >
-        <VStack space={5} alignItems="center">
-          <NativeBaseIcon />
-          <Heading size="lg">Welcome to NativeBase</Heading>
-          <HStack space={2} alignItems="center">
-            <Text>Edit</Text>
-            <Box
-              _web={{
-                _text: {
-                  fontFamily: "monospace",
-                  fontSize: "sm",
-                },
-              }}
-              px={2}
-              py={1}
-              _dark={{ bg: "blueGray.800" }}
-              _light={{ bg: "blueGray.200" }}
-            >
-              App.js
-            </Box>
-            <Text>and save to reload.</Text>
-          </HStack>
-          <Link href="https://docs.nativebase.io" isExternal>
-            <Text color="primary.500" underline fontSize={"xl"}>
-              Learn NativeBase
-            </Text>
-          </Link>
-          <ToggleDarkMode />
-        </VStack>
-      </Center>
-    </NativeBaseProvider>
+          <NativeBaseProvider>
+              <Center flex={1} px="3">
+              <View style={styles.container}>
+                    <Image source={logo} style={styles.logo} /> 
+                    <Text style={styles.instructions}> 
+                    To share a photo from your phone with a friend, just press the button below!{"\n"}</Text>
+                    <ShareButton />
+              </View>
+              </Center>
+        </NativeBaseProvider>
   );
 }
 
-// Color Switch Component
-function ToggleDarkMode() {
-  const { colorMode, toggleColorMode } = useColorMode();
-  return (
-    <HStack space={2} alignItems="center">
-      <Text>Dark</Text>
-      <Switch
-        isChecked={colorMode === "light"}
-        onToggle={toggleColorMode}
-        aria-label={
-          colorMode === "light" ? "switch to dark mode" : "switch to light mode"
-        }
-      />
-      <Text>Light</Text>
-    </HStack>
-  );
-}
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      logo: {
+        width: 305,
+        height: 159,
+        marginBottom: 10,
+      },
+      instructions: {
+        color: '#888',
+        fontSize: 18,
+        marginHorizontal: 15,
+      }, 
+      button1: {
+        backgroundColor: "blue",
+        padding: 20,
+        borderRadius: 5,
+      },
+      button2: {
+        backgroundColor: "blue",
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 250,
+        padding: 20,
+        borderRadius: 5,
+      },
+      buttonText: {
+        fontSize: 20,
+        color: '#fff',
+      }, 
+      buttonText2: {
+        fontSize: 20,
+        color: '#fff',
+      }, 
+      thumbnail: {
+        alignItems: 'center',
+        width: 300,
+        height: 350,
+        resizeMode: "contain"
+      }
+    });
